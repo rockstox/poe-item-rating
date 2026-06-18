@@ -18,6 +18,10 @@ let lastText = '';
 
 const POLL_MS = 350;
 
+// Helps Electron draw reliably on virtualized GPUs (cloud PCs like Shadow),
+// where hardware-accelerated compositing can leave the window black/invisible.
+app.disableHardwareAcceleration();
+
 function looksLikeItem(text: string): boolean {
   return /^Item Class:/m.test(text) && text.includes('--------');
 }
@@ -28,17 +32,25 @@ function createWindow() {
   const W = 380;
   const H = 460;
 
+  // Cloud/virtual GPUs (e.g. Shadow) often can't composite transparent windows,
+  // rendering them fully invisible — so transparency is opt-in. By default we use
+  // a solid card, which draws reliably everywhere.
+  const transparent = process.env.POE_TRANSPARENT === '1';
+  const clickThrough = process.env.POE_CLICKTHROUGH === '1';
+  const debug = process.env.POE_DEBUG === '1';
+
   win = new BrowserWindow({
     width: W,
     height: H,
     x: width - W - 24,
     y: 24,
     frame: false,
-    transparent: true,
+    transparent,
+    backgroundColor: transparent ? undefined : '#0e0e12',
     resizable: false,
-    skipTaskbar: true,
+    skipTaskbar: !debug, // show in taskbar while debugging so it's easy to find
     alwaysOnTop: true,
-    focusable: false,
+    focusable: clickThrough ? false : true,
     hasShadow: false,
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
@@ -50,10 +62,11 @@ function createWindow() {
   // Stay above borderless-fullscreen games.
   win.setAlwaysOnTop(true, 'screen-saver');
   win.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
-  // Let clicks pass through to the game; renderer regions re-enable as needed.
-  win.setIgnoreMouseEvents(true, { forward: true });
+  // Let clicks pass through to the game (only once we know it's drawing).
+  if (clickThrough) win.setIgnoreMouseEvents(true, { forward: true });
 
   win.loadFile(path.join(__dirname, '..', 'overlay.html'));
+  if (debug) win.webContents.openDevTools({ mode: 'detach' });
 }
 
 function pollClipboard() {
