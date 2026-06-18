@@ -13,11 +13,19 @@ import type { ItemScore } from './types';
 // 3. Hover an item, press Ctrl+C (the game's own copy). This app watches the
 //    clipboard, scores the item, and shows it. No input is simulated, no network
 //    calls are made — strictly within GGG's "one action per keypress" guidance.
+//
+// UI flow: each Ctrl+C pops a thin collapsed line (auto-hides after 5s). Click it
+// to expand the full breakdown, which stays until dismissed. The window is hidden
+// when idle, so it only ever appears right after you copy something.
 
 let win: BrowserWindow | null = null;
 let lastText = '';
 
 const POLL_MS = 350;
+const WIN_W = 360;
+const COLLAPSED_H = 42;
+const MARGIN = 24;
+const debug = process.env.POE_DEBUG === '1';
 
 // Helps Electron draw reliably on virtualized GPUs (cloud PCs like Shadow),
 // where hardware-accelerated compositing can leave the window black/invisible.
@@ -27,34 +35,36 @@ function looksLikeItem(text: string): boolean {
   return /^Item Class:/m.test(text) && text.includes('--------');
 }
 
-function createWindow() {
-  const display = screen.getPrimaryDisplay();
-  const { width } = display.workAreaSize;
-  const W = 380;
-  const H = 460;
+// Keep the window pinned to the top-right of the work area at a given height.
+function anchorTopRight(height: number) {
+  if (!win) return;
+  const wa = screen.getPrimaryDisplay().workArea;
+  win.setBounds({
+    x: wa.x + wa.width - WIN_W - MARGIN,
+    y: wa.y + MARGIN,
+    width: WIN_W,
+    height: Math.max(COLLAPSED_H, Math.round(height)),
+  });
+}
 
-  // Cloud/virtual GPUs (e.g. Shadow) often can't composite transparent windows,
-  // rendering them fully invisible — so transparency is opt-in. By default we use
-  // a solid card, which draws reliably everywhere.
-  const debug = process.env.POE_DEBUG === '1';
-  // See-through is opt-in (POE_TRANSPARENT=1) since it's invisible on cloud/
-  // virtual GPUs. Click-through is the default so the card floats over the game
-  // without stealing input; debug mode turns it off so the window is movable.
+function createWindow() {
+  // See-through is opt-in (POE_TRANSPARENT=1): transparent windows are invisible
+  // on cloud/virtual GPUs. The window must be interactive so you can click the
+  // collapsed line to expand it — so click-through is off by default here.
   const transparent = process.env.POE_TRANSPARENT === '1';
-  const clickThrough = !debug && process.env.POE_CLICKTHROUGH !== '0';
+  const clickThrough = process.env.POE_CLICKTHROUGH === '1';
 
   win = new BrowserWindow({
-    width: W,
-    height: H,
-    x: width - W - 24,
-    y: 24,
+    width: WIN_W,
+    height: COLLAPSED_H,
     frame: false,
+    show: debug, // hidden until first item; shown immediately when debugging
     transparent,
     backgroundColor: transparent ? undefined : '#0e0e12',
     resizable: false,
-    skipTaskbar: !debug, // show in taskbar while debugging so it's easy to find
+    skipTaskbar: !debug,
     alwaysOnTop: true,
-    focusable: clickThrough ? false : true,
+    focusable: !clickThrough,
     hasShadow: false,
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
@@ -63,12 +73,11 @@ function createWindow() {
     },
   });
 
-  // Stay above borderless-fullscreen games.
-  win.setAlwaysOnTop(true, 'screen-saver');
+  win.setAlwaysOnTop(true, 'screen-saver'); // above borderless-fullscreen games
   win.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
-  // Let clicks pass through to the game (only once we know it's drawing).
   if (clickThrough) win.setIgnoreMouseEvents(true, { forward: true });
 
+  anchorTopRight(COLLAPSED_H);
   win.loadFile(path.join(__dirname, '..', 'overlay.html'));
   if (debug) win.webContents.openDevTools({ mode: 'detach' });
 }
@@ -86,6 +95,7 @@ function pollClipboard() {
   const item = parseItem(text);
   const score: ItemScore = scoreItem(item);
   console.log(`[score] ${item.name ?? item.baseType ?? '?'} -> [${score.x}/${score.y}]`);
+  if (win && !win.isVisible()) win.showInactive(); // appear without stealing game focus
   win?.webContents.send('score', {
     score,
     advancedMode: item.advancedMode,
@@ -100,10 +110,9 @@ app.whenReady().then(() => {
   createWindow();
   const timer = setInterval(pollClipboard, POLL_MS);
 
-  // Toggle overlay visibility / quit without touching the game.
   globalShortcut.register('Control+Shift+S', () => {
     if (!win) return;
-    win.isVisible() ? win.hide() : win.show();
+    win.isVisible() ? win.hide() : win.showInactive();
   });
   globalShortcut.register('Control+Shift+Q', () => app.quit());
 
@@ -113,9 +122,10 @@ app.whenReady().then(() => {
   });
 });
 
-// Renderer can ask to (un)capture the mouse for interactive regions later.
-ipcMain.on('set-click-through', (_e, ignore: boolean) => {
-  win?.setIgnoreMouseEvents(ignore, { forward: true });
+// Renderer drives sizing (collapsed vs expanded) and dismissal.
+ipcMain.on('resize', (_e, height: number) => anchorTopRight(height));
+ipcMain.on('dismiss', () => {
+  if (!debug) win?.hide();
 });
 
 app.on('window-all-closed', () => app.quit());

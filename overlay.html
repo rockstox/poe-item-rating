@@ -7,23 +7,46 @@
       :root { color-scheme: dark; }
       * { margin: 0; padding: 0; box-sizing: border-box; }
       html, body { background: transparent; overflow: hidden; font-family: 'Segoe UI', system-ui, sans-serif; }
-      #app { padding: 6px; }
+      #app { padding: 0; }
+
+      /* collapsed: a single thin line */
+      .collapsed {
+        display: flex; align-items: center; gap: 8px;
+        background: rgba(14,14,18,0.92);
+        border: 1px solid rgba(255,255,255,0.12);
+        border-radius: 8px;
+        padding: 7px 10px;
+        color: #e8e8ea; font-size: 13px; white-space: nowrap;
+        cursor: pointer; user-select: none;
+        box-shadow: 0 4px 16px rgba(0,0,0,0.5);
+      }
+      .collapsed .cx { font-weight: 800; }
+      .collapsed .cpct { font-weight: 700; opacity: 0.9; }
+      .collapsed .ctitle { color: #c9c9d0; overflow: hidden; text-overflow: ellipsis; flex: 1; }
+      .collapsed .chint { color: #8a8a92; font-size: 11px; }
+
+      /* expanded card */
       .card {
-        background: rgba(14, 14, 18, 0.88);
+        position: relative;
+        background: rgba(14,14,18,0.92);
         border: 1px solid rgba(255,255,255,0.12);
         border-radius: 10px;
         padding: 12px 14px;
         color: #e8e8ea;
-        backdrop-filter: blur(2px);
         box-shadow: 0 6px 24px rgba(0,0,0,0.5);
       }
-      .hdr { -webkit-app-region: drag; } /* drag to move when not click-through */
-      .hdr .name { font-size: 15px; font-weight: 700; color: #f5e3b3; }
+      .x {
+        position: absolute; top: 8px; right: 10px;
+        width: 18px; height: 18px; line-height: 18px; text-align: center;
+        font-size: 12px; color: #9a9aa2; cursor: pointer; border-radius: 4px;
+      }
+      .x:hover { background: rgba(255,255,255,0.1); color: #fff; }
+      .hdr .name { font-size: 15px; font-weight: 700; color: #f5e3b3; padding-right: 22px; }
       .hdr .sub { font-size: 11px; color: #9a9aa2; margin-top: 1px; }
       .score { display: flex; align-items: baseline; gap: 4px; margin: 8px 0 4px; font-weight: 800; }
-      .score .x { font-size: 30px; }
+      .score .sx { font-size: 30px; }
       .score .slash { font-size: 20px; opacity: 0.5; }
-      .score .y { font-size: 20px; opacity: 0.85; }
+      .score .sy { font-size: 20px; opacity: 0.85; }
       .score .pctbig { margin-left: auto; font-size: 16px; }
       .warn { font-size: 10px; color: #ffce6b; margin: 4px 0; }
       .affixes { margin-top: 8px; display: flex; flex-direction: column; gap: 7px; }
@@ -40,12 +63,7 @@
   </head>
   <body>
     <div id="app">
-      <div class="card">
-        <div class="hdr">
-          <div class="name">PoE2 Item Scorer</div>
-          <div class="sub">ready — hover an item in-game and press Ctrl+C</div>
-        </div>
-      </div>
+      <div class="collapsed"><span class="cx">—</span><span class="ctitle">ready — Ctrl+C an item</span></div>
     </div>
     <script src="./dist/overlay-renderer.js"></script>
   </body>
