@@ -7,6 +7,7 @@ export interface ScorePayload {
   name: string | null;
   baseType: string | null;
   rarity: string | null;
+  dataVersion: string;
 }
 
 contextBridge.exposeInMainWorld('poe', {

@@ -2,6 +2,7 @@ import { app, BrowserWindow, clipboard, globalShortcut, ipcMain, screen } from '
 import * as path from 'path';
 import { parseItem } from './parser';
 import { scoreItem } from './scorer';
+import { dataVersion } from './data';
 import type { ItemScore } from './types';
 
 // --- How this works on the gaming PC ---
@@ -91,6 +92,7 @@ function pollClipboard() {
     name: item.name,
     baseType: item.baseType,
     rarity: item.rarity,
+    dataVersion,
   });
 }
 

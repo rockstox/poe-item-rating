@@ -11,6 +11,14 @@ const modsByBase: ModsByBaseFile = JSON.parse(
   fs.readFileSync(path.join(DATA_DIR, 'mods_by_base.min.json'), 'utf8'),
 );
 
+// RePoE-fork export version this data was pulled from (see scripts/update-data.ts).
+let dataVersion = 'unknown';
+try {
+  dataVersion = fs.readFileSync(path.join(DATA_DIR, 'VERSION.txt'), 'utf8').trim();
+} catch {
+  /* no version stamped */
+}
+
 // Clipboard "Item Class" values don't always equal the mods_by_base keys.
 // Most do (Crossbows, Bows, Wands, Rings, Amulets, Belts...). Add aliases here
 // as you hit mismatches while testing on real items.
@@ -113,6 +121,7 @@ function groupTiers(genGroups: GenGroups, groupKey: string) {
 export {
   mods,
   modsByBase,
+  dataVersion,
   basePool,
   resolveBaseKey,
   getMod,

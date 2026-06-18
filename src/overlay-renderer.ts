@@ -30,6 +30,7 @@ interface ScorePayloadLike {
   name: string | null;
   baseType: string | null;
   rarity: string | null;
+  dataVersion: string;
 }
 
 // NB: don't name this `poe` — contextBridge already defined a non-configurable
@@ -91,6 +92,7 @@ function render(p: ScorePayloadLike): void {
       </div>
       ${warn}
       <div class="affixes">${s.affixes.map(affixRow).join('')}</div>
+      <div class="foot">data ${esc(p.dataVersion)}</div>
     </div>`;
 }
 

@@ -5,6 +5,7 @@ import * as fs from 'fs';
 import { parseItem } from './parser';
 import { scoreItem } from './scorer';
 import { formatScore } from './format';
+import { dataVersion } from './data';
 
 function readInput(): string {
   const arg = process.argv[2];
@@ -22,3 +23,4 @@ if (!item.advancedMode) {
 }
 const score = scoreItem(item);
 console.log(formatScore(score));
+console.log(`\n  data: RePoE-fork ${dataVersion}`);
