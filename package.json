@@ -1,0 +1,21 @@
+{
+  "name": "poe2-item-scorer",
+  "version": "0.1.0",
+  "description": "Scores a PoE2 item [X / Y] by how close its affixes are to their best-possible tier+roll given the item base and item level.",
+  "type": "commonjs",
+  "main": "dist/main.js",
+  "scripts": {
+    "score": "tsx src/cli.ts",
+    "test": "tsx test/run.ts",
+    "typecheck": "tsc --noEmit",
+    "build": "tsc -p tsconfig.build.json",
+    "start": "npm run build && electron .",
+    "update-data": "tsx scripts/update-data.ts"
+  },
+  "devDependencies": {
+    "@types/node": "^22.19.21",
+    "electron": "^31.7.7",
+    "tsx": "^4.22.4",
+    "typescript": "^5.9.3"
+  }
+}
