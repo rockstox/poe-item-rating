@@ -35,9 +35,12 @@ function createWindow() {
   // Cloud/virtual GPUs (e.g. Shadow) often can't composite transparent windows,
   // rendering them fully invisible — so transparency is opt-in. By default we use
   // a solid card, which draws reliably everywhere.
-  const transparent = process.env.POE_TRANSPARENT === '1';
-  const clickThrough = process.env.POE_CLICKTHROUGH === '1';
   const debug = process.env.POE_DEBUG === '1';
+  // See-through is opt-in (POE_TRANSPARENT=1) since it's invisible on cloud/
+  // virtual GPUs. Click-through is the default so the card floats over the game
+  // without stealing input; debug mode turns it off so the window is movable.
+  const transparent = process.env.POE_TRANSPARENT === '1';
+  const clickThrough = !debug && process.env.POE_CLICKTHROUGH !== '0';
 
   win = new BrowserWindow({
     width: W,

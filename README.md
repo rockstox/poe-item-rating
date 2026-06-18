@@ -36,12 +36,21 @@ npm install
 npm start        # builds TypeScript -> dist, then launches the overlay
 ```
 
-The overlay sits in the top-right, click-through (clicks pass to the game).
+The overlay sits top-right as a solid card, click-through (clicks pass to the
+game). Score an item: hover it in-game, press **Ctrl+C**. The overlay updates.
 
 - **Ctrl+Shift+S** — show / hide the overlay
 - **Ctrl+Shift+Q** — quit
 
-Score an item: hover it in-game, press **Ctrl+C**. The overlay updates.
+### Launch options (env vars)
+
+| Variable | Effect |
+| --- | --- |
+| `POE_DEBUG=1` | Movable window, shows in taskbar, opens DevTools. Use to troubleshoot. |
+| `POE_TRANSPARENT=1` | See-through background. **Leave off on cloud PCs (Shadow, VMs)** — virtual GPUs render transparent windows invisible. |
+| `POE_CLICKTHROUGH=0` | Make the window clickable/focusable instead of click-through. |
+
+PowerShell example: `$env:POE_DEBUG="1"; npm start`
 
 ## Scoring from the command line (no game needed)
 
