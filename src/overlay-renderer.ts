@@ -32,7 +32,9 @@ interface ScorePayloadLike {
   rarity: string | null;
 }
 
-const poe = (window as any).poe as {
+// NB: don't name this `poe` — contextBridge already defined a non-configurable
+// global `poe`, and a top-level `const poe` would clash ("already declared").
+const bridge = (window as any).poe as {
   onScore: (cb: (p: ScorePayloadLike) => void) => void;
   setClickThrough: (ignore: boolean) => void;
 };
@@ -92,4 +94,4 @@ function render(p: ScorePayloadLike): void {
     </div>`;
 }
 
-poe.onScore(render);
+bridge.onScore(render);
