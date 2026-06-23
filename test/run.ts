@@ -40,8 +40,26 @@ check('produces X/Y', score.x > 0 && score.y > 0, `[${score.x}/${score.y}]`);
 check('X <= Y', score.x <= score.y);
 check('at least some affixes matched', score.affixes.some((a) => a.matched), `${6 - score.unmatched}/6 matched`);
 
+console.log('\nFAVORITES');
+const plain = scoreItem(item);
+check('no favorites → no keeper', plain.keeper === false && plain.favoriteBest === null);
+check('no favorites → no affix flagged', plain.affixes.every((a) => !a.favorite));
+
+// Attack speed rolled 95% (a keeper); phys damage rolled 50% (favorited, not a keeper).
+const favs = new Set(['LocalIncreasedAttackSpeed', 'LocalPhysicalDamage']);
+const favScore = scoreItem(item, favs);
+check('favorited affixes flagged', favScore.affixes.filter((a) => a.favorite).length === 2);
+check('keeper triggered', favScore.keeper === true);
+check(
+  'favoriteBest is the best-rolled favorite',
+  favScore.favoriteBest?.groupKey === 'LocalIncreasedAttackSpeed',
+  String(favScore.favoriteBest?.groupKey),
+);
+const weakFav = scoreItem(item, new Set(['LocalPhysicalDamage']));
+check('weak favorite is not a keeper', weakFav.favoriteBest != null && weakFav.keeper === false);
+
 console.log('\n--- report ---\n');
-console.log(formatScore(score));
+console.log(formatScore(favScore));
 
 console.log(`\n${failures === 0 ? 'ALL PASS' : failures + ' FAILURE(S)'}`);
 process.exit(failures === 0 ? 0 : 1);

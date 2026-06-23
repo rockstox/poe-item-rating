@@ -3,3 +3,6 @@ dist/
 *.log
 .claude/
 .gstack/
+
+# personal wishlist (per-machine)
+favorites.json

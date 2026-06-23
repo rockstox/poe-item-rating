@@ -1,7 +1,11 @@
-import type { ParsedItem, ParsedAffix, AffixScore, ItemScore, StatValue } from './types';
+import type { ParsedItem, ParsedAffix, AffixScore, ItemScore, StatValue, FavoriteHit } from './types';
 import type { Mod } from './types';
 import { basePool, ceilingForGroup, getMod, sumMax } from './data';
 import type { GenGroups } from './data';
+
+// A favorited affix is a "keeper" once its roll reaches this fraction of the
+// best this base could hold at its ilvl — i.e. a wishlist hit worth not missing.
+export const KEEPER_PCT = 0.8;
 
 // All rolled value tokens across an affix's stat lines, in reading order.
 function affixValues(affix: ParsedAffix): StatValue[] {
@@ -83,7 +87,7 @@ function matchAffix(affix: ParsedAffix, genGroups: GenGroups): Match | null {
   return best?.m ?? null;
 }
 
-function scoreItem(item: ParsedItem): ItemScore {
+function scoreItem(item: ParsedItem, favorites: Set<string> = new Set()): ItemScore {
   const bp = basePool(item.itemClass);
   const affixScores: AffixScore[] = [];
 
@@ -99,6 +103,7 @@ function scoreItem(item: ParsedItem): ItemScore {
       currentTierMax: null,
       pct: 0,
       points: 0,
+      favorite: false,
     };
 
     if (!bp) {
@@ -123,6 +128,7 @@ function scoreItem(item: ParsedItem): ItemScore {
     base.ceiling = round(ceil ? ceil.magnitudeMax : match.currentTierMax);
     base.pct = base.ceiling > 0 ? Math.min(1, base.actual / base.ceiling) : 0;
     base.points = Math.round(base.pct * 100);
+    base.favorite = favorites.has(match.groupKey);
     affixScores.push(base);
   }
 
@@ -131,6 +137,16 @@ function scoreItem(item: ParsedItem): ItemScore {
   const matched = affixScores.filter((a) => a.matched);
   const x = matched.reduce((s, a) => s + a.points, 0);
   const y = matched.length * 100;
+
+  // Wishlist axis: the best-rolled favorite present, and whether it's a keeper.
+  // Orthogonal to [X/Y] — surfaces "does this item hit something I want, well?".
+  let favoriteBest: FavoriteHit | null = null;
+  for (const a of matched) {
+    if (!a.favorite || !a.groupKey) continue;
+    if (!favoriteBest || a.pct > favoriteBest.pct) {
+      favoriteBest = { groupKey: a.groupKey, name: a.name, text: a.text, points: a.points, pct: a.pct };
+    }
+  }
 
   return {
     x,
@@ -141,6 +157,8 @@ function scoreItem(item: ParsedItem): ItemScore {
     unmatched: affixScores.length - matched.length,
     itemClass: item.itemClass,
     itemLevel: item.itemLevel,
+    favoriteBest,
+    keeper: favoriteBest != null && favoriteBest.pct >= KEEPER_PCT,
   };
 }
 

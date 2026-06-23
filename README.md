@@ -36,8 +36,10 @@ npm install
 npm start        # builds TypeScript -> dist, then launches the overlay
 ```
 
-The overlay sits top-right as a solid card, click-through (clicks pass to the
-game). Score an item: hover it in-game, press **Ctrl+C**. The overlay updates.
+The overlay sits top-right. Score an item: hover it in-game, press **Ctrl+C** —
+a thin line pops up (auto-hides after 5s). Click it to expand the full breakdown.
+The window is clickable so you can expand, dismiss, and favorite affixes; clicking
+it briefly takes focus from the game.
 
 - **Ctrl+Shift+S** — show / hide the overlay
 - **Ctrl+Shift+Q** — quit
@@ -48,9 +50,23 @@ game). Score an item: hover it in-game, press **Ctrl+C**. The overlay updates.
 | --- | --- |
 | `POE_DEBUG=1` | Movable window, shows in taskbar, opens DevTools. Use to troubleshoot. |
 | `POE_TRANSPARENT=1` | See-through background. **Leave off on cloud PCs (Shadow, VMs)** — virtual GPUs render transparent windows invisible. |
-| `POE_CLICKTHROUGH=0` | Make the window clickable/focusable instead of click-through. |
+| `POE_CLICKTHROUGH=1` | Make the window click-through (clicks pass to the game). Disables the favorite/expand clicks. |
 
 PowerShell example: `$env:POE_DEBUG="1"; npm start`
+
+## Favorites (your wishlist)
+
+Some affixes you always want — life, movement speed, a resistance. Click the **☆**
+next to any affix in the expanded card to favorite its mod group; it fills gold and
+sticks across items. Favorites are a second axis, orthogonal to `[X/Y]`:
+
+- A favorited affix rolled at **≥80%** of its ceiling flags the item as a **★ KEEPER** —
+  shown in gold, and the overlay **won't auto-dismiss** so a good drop never slips past.
+- The collapsed line surfaces the best wishlist hit (e.g. `★ 18% increased Attack Speed · 95%`).
+
+Favorites live in a gitignored `favorites.json` (a list of mod-group keys) at the repo
+root, shared by the overlay and the CLI. The score number itself is never reweighted —
+quality and desirability stay separate.
 
 ## Scoring from the command line (no game needed)
 
@@ -75,8 +91,9 @@ npm run update-data
 ```
 src/parser.ts   clipboard text -> structured item
 src/data.ts     RePoE index: base pool, group tiers, ceiling lookup
-src/scorer.ts   affix -> group match, per-affix points, [X/Y]
-src/main.ts     Electron: clipboard watcher + transparent overlay window
+src/scorer.ts   affix -> group match, per-affix points, [X/Y], keeper flag
+src/favorites.ts  wishlist (mod-group keys) load/save/toggle -> favorites.json
+src/main.ts     Electron: clipboard watcher + overlay window + favorite toggles
 src/overlay-renderer.ts  the overlay UI
 data/           bundled RePoE-fork JSON (affix database)
 ```

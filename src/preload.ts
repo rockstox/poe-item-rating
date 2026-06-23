@@ -8,6 +8,7 @@ export interface ScorePayload {
   baseType: string | null;
   rarity: string | null;
   dataVersion: string;
+  expanded: boolean; // render the full card directly (after a favorite toggle)
 }
 
 contextBridge.exposeInMainWorld('poe', {
@@ -16,5 +17,6 @@ contextBridge.exposeInMainWorld('poe', {
   },
   resize: (height: number) => ipcRenderer.send('resize', height),
   dismiss: () => ipcRenderer.send('dismiss'),
+  toggleFavorite: (groupKey: string) => ipcRenderer.send('toggle-favorite', groupKey),
   debug: process.env.POE_DEBUG === '1',
 });

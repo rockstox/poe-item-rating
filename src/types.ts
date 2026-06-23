@@ -80,7 +80,17 @@ export interface AffixScore {
   currentTierMax: number | null; // max of the tier it actually rolled
   pct: number; // actual / ceiling, clamped 0..1
   points: number; // pct * 100, rounded — this affix's contribution to X
+  favorite: boolean; // groupKey is on your wishlist (favorites.json)
   note?: string;
+}
+
+// The best-rolled favorited affix present on an item (the "best hit").
+export interface FavoriteHit {
+  groupKey: string;
+  name: string | null;
+  text: string;
+  points: number;
+  pct: number;
 }
 
 export interface ItemScore {
@@ -92,4 +102,8 @@ export interface ItemScore {
   unmatched: number;
   itemClass: string | null;
   itemLevel: number | null;
+  // Wishlist axis — orthogonal to [X/Y]. favoriteBest is the best-rolled favorite
+  // present (null if none); keeper is true when it clears KEEPER_PCT of its ceiling.
+  favoriteBest: FavoriteHit | null;
+  keeper: boolean;
 }

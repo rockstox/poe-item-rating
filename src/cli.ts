@@ -6,6 +6,7 @@ import { parseItem } from './parser';
 import { scoreItem } from './scorer';
 import { formatScore } from './format';
 import { dataVersion } from './data';
+import { loadFavorites } from './favorites';
 
 function readInput(): string {
   const arg = process.argv[2];
@@ -21,6 +22,6 @@ if (!item.advancedMode) {
       'before copying the item.\n',
   );
 }
-const score = scoreItem(item);
+const score = scoreItem(item, loadFavorites());
 console.log(formatScore(score));
 console.log(`\n  data: RePoE-fork ${dataVersion}`);

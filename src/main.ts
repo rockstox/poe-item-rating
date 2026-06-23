@@ -3,7 +3,8 @@ import * as path from 'path';
 import { parseItem } from './parser';
 import { scoreItem } from './scorer';
 import { dataVersion } from './data';
-import type { ItemScore } from './types';
+import { loadFavorites, toggleFavorite } from './favorites';
+import type { ItemScore, ParsedItem } from './types';
 
 // --- How this works on the gaming PC ---
 // 1. Run PoE2 in *Windowed Fullscreen (Borderless)* — exclusive fullscreen hides
@@ -20,6 +21,8 @@ import type { ItemScore } from './types';
 
 let win: BrowserWindow | null = null;
 let lastText = '';
+let lastItem: ParsedItem | null = null; // re-scored when favorites change
+const favorites = loadFavorites();
 
 const POLL_MS = 350;
 const WIN_W = 360;
@@ -82,6 +85,23 @@ function createWindow() {
   if (debug) win.webContents.openDevTools({ mode: 'detach' });
 }
 
+// Score an item and push it to the overlay. `expanded` keeps the full card open
+// (used when re-scoring after a favorite toggle, so the view doesn't collapse).
+function emitScore(item: ParsedItem, expanded = false) {
+  const score: ItemScore = scoreItem(item, favorites);
+  console.log(`[score] ${item.name ?? item.baseType ?? '?'} -> [${score.x}/${score.y}]${score.keeper ? ' ★keeper' : ''}`);
+  if (win && !win.isVisible()) win.showInactive(); // appear without stealing game focus
+  win?.webContents.send('score', {
+    score,
+    advancedMode: item.advancedMode,
+    name: item.name,
+    baseType: item.baseType,
+    rarity: item.rarity,
+    dataVersion,
+    expanded,
+  });
+}
+
 function pollClipboard() {
   let text = '';
   try {
@@ -92,18 +112,8 @@ function pollClipboard() {
   if (text === lastText || !looksLikeItem(text)) return;
   lastText = text;
 
-  const item = parseItem(text);
-  const score: ItemScore = scoreItem(item);
-  console.log(`[score] ${item.name ?? item.baseType ?? '?'} -> [${score.x}/${score.y}]`);
-  if (win && !win.isVisible()) win.showInactive(); // appear without stealing game focus
-  win?.webContents.send('score', {
-    score,
-    advancedMode: item.advancedMode,
-    name: item.name,
-    baseType: item.baseType,
-    rarity: item.rarity,
-    dataVersion,
-  });
+  lastItem = parseItem(text);
+  emitScore(lastItem);
 }
 
 app.whenReady().then(() => {
@@ -126,6 +136,11 @@ app.whenReady().then(() => {
 ipcMain.on('resize', (_e, height: number) => anchorTopRight(height));
 ipcMain.on('dismiss', () => {
   if (!debug) win?.hide();
+});
+// Star toggled in the overlay: update the wishlist, persist, re-score in place.
+ipcMain.on('toggle-favorite', (_e, groupKey: string) => {
+  toggleFavorite(favorites, groupKey);
+  if (lastItem) emitScore(lastItem, true);
 });
 
 app.on('window-all-closed', () => app.quit());
